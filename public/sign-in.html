@@ -44,7 +44,7 @@
 											<input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
 											<button class="btn icon"><i class="material-icons">lock_outline</i></button>
 										</div>
-										<button type="submit" class="btn button" formaction="index-2.html">Sign In</button>
+										<button id="buttonsubmit" type="button" class="btn button" >Sign In</button>
 										<div class="callout">
 											<span>Don't have account? <a href="/signup">Create Account</a></span>
 										</div>
@@ -77,6 +77,29 @@
 		<script>window.jQuery || document.write('<script src="dist/js/vendor/jquery-slim.min.js"><\/script>')</script>
 		<script src="dist/js/vendor/popper.min.js"></script>
 		<script src="dist/js/bootstrap.min.js"></script>
+		<script>
+			const email = document.getElementById("inputEmail");
+			const password = document. getElementById("inputPassword");
+			document.getElementById("buttonsubmit").addEventListener("click",()=>{
+				fetch("/api/signin", {
+					method:"POST",
+					body: JSON.stringify({ email: email.value, password: password.value}),
+					headers: {
+                    'Content-Type': 'application/json'
+                }
+				})
+				.then(res =>res.json())
+				.then(data => {
+					if(data.message){
+						window.location.href = '/'
+					}
+				})
+				.catch(error => {
+                console.error(error);
+            });
+			})
+
+		</script>
 	</body>
 
 </html>
