@@ -22,7 +22,7 @@ export function initSocket(server) {
       rooms.forEach((item) => {
         socket.join(item);
       });
-
+      
           io.to(room).emit("user data", user);
           const userFriends = await usersdb.find({ _id: { $in: extractIds(user.friends) } });
           io.to(room).emit("user friends", userFriends);
@@ -37,12 +37,21 @@ export function initSocket(server) {
       }
     })
 
+    socket.on("main room", (data) => {
+      mainroom = data
+      if (!socket.rooms.has(data)) {
+        socket.join(data);
+      }
+    })
+
     socket.on("new friend", async (data) => {
-      const friends = await usersdb.findById(data);
+      const friend = await usersdb.findById(data);
       let hostchat
       if(!checkObjectExistenceById(user.friends, data)){
-         const charusers = [{name:friends.name,_id:friends._id},{name:user.name, _id:user._id}]
-         hostchat = await chatdb.create({users:charusers,messages:[]});
+        
+        const charusers = [{name:friend.name,_id:friend._id},{name:user.name, _id:user._id}]
+        hostchat = await chatdb.create({users:charusers,messages:[]});
+        socket.join(hostchat._id.toString())
          await usersdb.updateOne(
             {"_id":data}, 
             {
@@ -61,8 +70,8 @@ export function initSocket(server) {
             {
                $push:{
                   friends:{
-                     friendsname:friends.name,
-                     friends_id:friends._id,
+                     friendsname:friend.name,
+                     friends_id:friend._id,
                      friendoffer:false,
                      friendyes:false,
                      chat_id:hostchat._id
@@ -73,7 +82,9 @@ export function initSocket(server) {
             }else{
               hostchat = await chatdb.findById(findObjectsByMethod(user.friends, data).chat_id)
             }
-            io.to(room).emit("response offer", {hostchat, id:data})
+            mainroom = hostchat._id.toString()
+            io.to(data).emit("sidebar", user)
+            io.to(room).emit("new chat",  {friend, room:hostchat._id})
     })
 
     socket.on("searchpost", async (data) => {
@@ -81,11 +92,12 @@ export function initSocket(server) {
       io.to(room).emit("search", search)
     })
     
+    
 
-    socket.on('send-message', (data) => {
-      if(mainroom == data.room){
-        io.to(data.room).emit('chat-message', data);
-      }
+    socket.on('send-message', async (data) => {
+      const message = {name:data.user, text:data.text}
+      await chatdb.updateOne({"_id":data.room},{$push : { messages : message }})
+      io.to(data.room).emit('chat-message', data);
     });
 
     socket.on('disconnect', () => {

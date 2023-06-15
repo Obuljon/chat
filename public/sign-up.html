@@ -34,7 +34,9 @@
 											<i class="material-icons">whatshot</i>
 										</button>
 									</div>
-									<p>or use your email for registration:</p>
+									<div id="errors" class="text-danger">
+										
+									</div>
 									<form class="signup">
 										<div class="form-parent">
 											<div class="form-group">
@@ -99,6 +101,15 @@
 				.then(data => {
 					if(data.message)
 						window.location.href = '/signin';
+						else{
+							const errorsDiv = document.querySelector("#errors")
+							errorsDiv.innerHTML = ""
+							data.errors.forEach(e => {
+								const p = document.createElement("p");
+								p.innerText = e
+								errorsDiv.appendChild(p)
+						})
+						}
 				})
 				.catch(error => {
                 console.error(error);

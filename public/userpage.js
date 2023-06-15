@@ -1,6 +1,6 @@
 
 
-        var friends        
+        var friends = []       
         var room = ""
 		var friend
         
@@ -10,26 +10,16 @@
 
     
 		
-            socket.on("res chat", data => {
-                const chats = document.querySelector("#chats");
-                if(data.user.images.length == 0) {data.user.images = [{image:"noavatar.png"}]}
-                const button = document.createElement('button');
-                button.className = "btn filterDiscussions all unread single";
-                button.setAttribute("onclick", `theChat('${item._id}')`);
-                button.innerHTML = `<img class="avatar-md" src="file/${data.user.images[data.user.images.length - 1].image}" data-toggle="tooltip" data-placement="top" title="" alt="avatar" data-original-title="Michael">
-                <div class="status">
-                    <i class="material-icons offline">fiber_manual_record</i>
-                </div>
-                <div class="new bg-pink">
-                    <span></span>
-                </div>
-                <div class="data">
-                    <h5>${data.user.name}</h5>
-                    <span>Sun</span>
-                    <p></p>
-                </div>`
-
-                chats.insertBefore(button, chats.firstChild);
+            socket.on("new chat", data => {
+                friend = data.friend
+                friends.unshift(data.friend);
+                room = data.room
+                socket.emit("main room", data.room)
+                if(data.friend.images.length == 0) data.friend.images = [{image: "noavatar.png"}]
+                document.getElementById("friendname").innerText = data.friend.name
+                document.getElementById("friendimg").innerHTML = `<img class="avatar-md" src="file/${data.friend.images[data.friend.images.length - 1].image}" data-toggle="tooltip" data-placement="top" title="" alt="avatar" data-original-title="Keith">`
+                document.getElementById("status").innerHTML = `<i class="material-icons online"></i>`
+                friendspage(friends)
             })
 
             socket.on("search", (data) => {
@@ -45,14 +35,6 @@
                                    
                                     button.innerHTML = `
                                         <img class="avatar-md" src="/file/${item.images[item.images.length - 1].image}" data-toggle="tooltip" data-placement="top" title="Michael" alt="avatar">
-                                            <div class="status">
-                                                <i class="material-icons offline">
-                                                    fiber_manual_record
-                                                </i>
-                                            </div>
-                                        <div class="new bg-pink">
-                                            <span>+10</span>
-                                        </div>
                                         <div class="data">
                                             <h5>${item.name}</h5>
                                             <span></span>
@@ -82,7 +64,30 @@
             socket.on("user friends", friendspage)
 
             socket.on("sidebar", (data) => {
-                console.log(data)
+                const newroom = data.friends.find(e => e.friends_id == user_id).chat_id
+                socket.emit("main room", newroom)
+                if(friends.some(e => e._id && e._id.toString() ===  data._id.toString())) return
+                friends.unshift(data);
+                const chats = document.querySelector("#chats")
+                if(data.images.length == 0) data.images = [{image:"noavatar.png"}]
+                const button = document.createElement('button');
+                button.id = data._id
+                button.className = "btn filterDiscussions all unread single";
+                button.setAttribute("onclick", `theChat('${data._id}')`);
+                button.innerHTML = `
+                                        <img class="avatar-md" src="/file/${data.images[data.images.length - 1].image}" data-toggle="tooltip" data-placement="top" title="Michael" alt="avatar">
+                                            <div class="status">
+                                                <i class="material-icons online">
+                                                    fiber_manual_record
+                                                </i>
+                                            </div>
+                                        
+                                        <div class="data">
+                                            <h5>${data.name}</h5>
+                                            <span></span>
+                                            <p></p>
+                                        </div>`
+                chats.insertBefore(button, chats.firstChild);
             })
 
             socket.on("response offer", (data) => {
@@ -126,6 +131,7 @@
 				div.scrollIntoView({ behavior: "smooth", block: "end" });	
             if(data.user_id != user_id){
                 swapfriends(data.user_id,data.text)
+                if(data.room != room)
                 messagenum(data.user_id,)
             } 
 			});
@@ -138,8 +144,8 @@
                 if(input.value != ''){
                     const data = {text: input.value, user, user_id, room}
                     socket.emit('send-message', data);
-                    swapfriends(friend._id, input.value)
                     input.value = '';
+                    swapfriends(friend._id, input.value)
                 }
 
         })
@@ -151,7 +157,16 @@
 			}
 
 			function theChat(id){
+                document.getElementById("messages").innerHTML = ""
+                const button = document.getElementById(id);
+                if (button) {
+                const statusElement = button.querySelector('.new');
+                if (statusElement) {
+                    statusElement.remove();
+                }
+                }
 				friend = friends.find(e => e._id === id)
+                room = friend.friends.find(e => e.friends_id == user_id).chat_id;
 				if(friend.images.length == 0){
                     friend.images = [{image: "noavatar.png"}]
                     }
@@ -168,7 +183,8 @@
                         const text = inputElement.value;
                         socket.emit("searchpost", text)
                     }else{
-                       friendspage(friends)
+                        inputElement.value = ""
+                        friendspage(friends)
                     }
 				});
 
@@ -176,7 +192,7 @@
             friends = data
             const chats = document.querySelector("#chats");
             chats.innerHTML = "";
-            data.forEach(item => {
+            friends.forEach(item => {
                 if(item.images.length == 0) item.images = [{image:"noavatar.png"}]
                 const button = document.createElement('button');
                 button.id = item._id
@@ -221,3 +237,5 @@
                     spanElement.textContent = `+${newCount}`;
                 }
             } 
+
+            

@@ -15,7 +15,6 @@ class Registration {
         if(user == null || istrue == false){
             res.status(200).json({error:"error"})
         }else{
-            
             req.session.user = user;
             res.status(200).json({message:true})
         }

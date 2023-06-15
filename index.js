@@ -25,7 +25,7 @@ app.set("port", 3000);
 app.use(express.static(path.join(__dirname,'public')));
 app.use(express.urlencoded({extended:true}));
 app.use(express.json());
-// app.use(validator()); 
+app.use(validator()); 
  const sessionMiddleware = session({
     secret: "qwertyuiop",
     cookie: { maxAge: 1000 * 60 * 60 },

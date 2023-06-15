@@ -34,7 +34,9 @@
 											<i class="material-icons">whatshot</i>
 										</button>
 									</div>
-									<p>or use your email account:</p>
+									<div id="errors" class="text-danger">
+										<p></p>
+									</div>
 									<form>
 										<div class="form-group">
 											<input type="email" id="inputEmail" class="form-control" placeholder="Email Address" required>
@@ -92,6 +94,14 @@
 				.then(data => {
 					if(data.message){
 						window.location.href = '/'
+					}else{
+						const errorsDiv = document.querySelector("#errors")
+						errorsDiv.innerHTML = ""
+						data.errors.forEach(e => {
+							const p = document.createElement("p");
+							p.innerText = e
+							errorsDiv.appendChild(p)
+						})
 					}
 				})
 				.catch(error => {
